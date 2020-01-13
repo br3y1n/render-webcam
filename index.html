@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Capture Picture</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <style>
+    header {
+      background: #470f55;
+      color: white
+    }
+
+    #webCam,
+    #webCamCv {
+      width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class=" col-12 text-center">
+          <h1>Capturar fotos</h1>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-6 text-center my-3">
+          <video playsinline id="webCam" width="800" height="600"></video>
+          <canvas id="webCamCv"></canvas>
+        </div>
+        <div class="col-12 text-center">
+          <p id="orientation"></p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-12 text-right">
+          <p class="px-2">&copy BreYin 2020</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+    integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+    crossorigin="anonymous"></script>
+  <script type="text/javascript">
+
+    $(function () {
+
+      const
+        constraints = {
+          audio: false,
+          video: true
+        },
+
+        posterDimens = {//set poster dimensions to vertical and horizontal orientations
+
+          vertical: {
+            width: 825,
+            height: 1400
+          },
+
+          horizontal: {
+            width: 800,
+            height: 600
+          }
+
+        },
+
+        oldGetUserMedia = (constraints, successCallback, errorCallback) => {
+
+          let getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia)
+
+          if (!getUserMedia)
+            return Promise.reject(new Error('getUserMedia is not implemented in this browser'))
+
+          return new Promise((successCallback, errorCallback) => { getUserMedia(constraints, successCallback, errorCallback) })
+        }
+
+      //start
+      if (navigator.mediaDevices === undefined)
+        navigator.mediaDevices = {}
+
+      if (navigator.mediaDevices.getUserMedia === undefined)
+        navigator.mediaDevices.getUserMedia = oldGetUserMedia
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(function (stream) {
+          let
+            video = document.getElementById('webCam'),
+            videoCv = document.getElementById('webCamCv'),
+            videoCtx = videoCv.getContext('2d')
+
+          video.srcObject = stream
+          video.onloadedmetadata = () => {
+            video.play()
+          }
+
+          video.onplay = () => {
+
+            const
+              setCvDimens = () => {
+                let
+                  vidW = video.videoWidth,
+                  vidH = video.videoHeight
+
+                videoCv.width = (vidW > vidH) ? posterDimens.horizontal.width : posterDimens.vertical.width
+                videoCv.height = (vidW > vidH) ? posterDimens.horizontal.height : posterDimens.vertical.height
+              },
+              getCanvasDimens = () => {
+                let
+                  vidW = video.videoWidth,
+                  vidH = video.videoHeight,
+                  postH = posterDimens.horizontal,
+                  postV = posterDimens.vertical,
+                  relCv = (vidW > vidH) ? (postH.width / postH.height) : (postV.width / postV.height),
+                  adaptH = vidW / relCv,
+                  adaptW = vidH * relCv,
+                  dimens = null
+
+                if (adaptH <= vidH) {
+                  dimens = {
+                    x: 0,
+                    y: parseInt((vidH - adaptH) / 2),
+                    w: vidW,
+                    h: adaptH
+                  }
+                } else {
+                  dimens = {
+                    x: parseInt((vidW - adaptW) / 2),
+                    y: 0,
+                    w: adaptW,
+                    h: vidH
+                  }
+                }
+
+                return dimens
+              },
+              videoLoop = () => {
+                let dimensions = getCanvasDimens()
+                setCvDimens()
+                videoCtx.drawImage(video, dimensions.x, dimensions.y, dimensions.w, dimensions.h, 0, 0, videoCv.width, videoCv.height)
+                setTimeout(videoLoop, 0)
+              }
+
+            videoLoop()
+          }
+        })
+        .catch(function (error) {
+          console.log(error.name + ": " + error.message)
+          $('body').html(error.name + ": " + error.message)
+        })
+
+    })
+  </script>
+</body>
+
+</html>
