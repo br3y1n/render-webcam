@@ -307,41 +307,50 @@
 
         const
 
-          createImgs = (resp) => {
+          createImg = (type, resp) => {
 
             let
-              imgsH = '',
-              imgsV = ''
-
-            resp.data.horizontal.forEach(function (val, idx) {
-              imgsH += `<div class="carousel-item ${(idx == 0) ? 'active' : ''}">
-                          <img class="d-block w-100" src="${val}" alt="poster${idx}">
+              carousel = (type == 'horizontal') ? $('#horizontalCarousel .carousel-inner') : $('#verticalCarousel .carousel-inner'),
+              hasChild = carousel[0].childElementCount > 0,
+              img = `<div class="carousel-item ${!hasChild ? 'active' : ''}">
+                          <img class="d-block w-100" src="${resp.data}">
                         </div>`
+
+            carousel.append(img)
+          },
+
+          getImages = (resp) => {
+
+            const getImage = (data, type) => {
+              $.ajax({
+                type: 'POST',
+                url: 'http://localhost/Brayan_Arango/Pruebas/render-webcam/Images/getImage',
+                data: data,
+                dataType: 'JSON',
+                success: createImg.bind(undefined, type)
+              })
+            }
+
+            resp.data.horizontal.forEach(function (val) {
+              getImage({ imagePath: `horizontal/${val}` }, 'horizontal')
             })
 
-            resp.data.vertical.forEach(function (val, idx) {
-              imgsV += `<div class="carousel-item ${(idx == 0) ? 'active' : ''}">
-                          <img class="d-block w-100" src="${val}" alt="poster${idx}">
-                        </div>`
+            resp.data.vertical.forEach(function (val) {
+              getImage({ imagePath: `vertical/${val}` }, 'vertical')
             })
 
-            $('#horizontalCarousel .carousel-inner').html(imgsH)
-            $('#verticalCarousel .carousel-inner').html(imgsV)
           },
 
           imageNotFound = (resp) => {
 
             $('.poster').html(`<h2>${resp.responseJSON.messageError}</h2>`)
-            $('#cut').unbind('click').click(function () {
-              $('.poster').show()
-            })
 
           }
 
         $.ajax({
           type: 'GET',
-          url: 'http://localhost/Brayan_Arango/Pruebas/render-webcam/Images/getImages',
-          success: createImgs,
+          url: 'http://localhost/Brayan_Arango/Pruebas/render-webcam/Images/getImagesList',
+          success: getImages,
           error: imageNotFound
         })
       }

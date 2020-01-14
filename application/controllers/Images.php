@@ -19,7 +19,7 @@ class Images extends CI_Controller
      * 
      * @return JSON 
      */
-    public function getImages()
+    public function getImagesList()
     {
         $filesH = array_diff(scandir(FCPATH  . 'assets/images/horizontal'), array('.', '..'));
         $filesV = array_diff(scandir(FCPATH  . 'assets/images/vertical'), array('.', '..'));
@@ -35,26 +35,48 @@ class Images extends CI_Controller
                 $path = FCPATH  . 'assets/images/horizontal/' . $file;
                 $fileType = pathinfo($path, PATHINFO_EXTENSION);
 
-                if ($fileType == 'png') {
-                    $imageBase64 = getDataURI($path);
-                    array_push($data['horizontal'], $imageBase64);
-                }
+                if ($fileType == 'png')
+                    array_push($data['horizontal'], $file);
             }
 
             foreach ($filesV as $file) {
                 $path = FCPATH  . 'assets/images/vertical/' . $file;
                 $fileType = pathinfo($path, PATHINFO_EXTENSION);
 
-                if ($fileType == 'png') {
-                    $imageBase64 = getDataURI($path);
-                    array_push($data['vertical'], $imageBase64);
-                }
+                if ($fileType == 'png')
+                    array_push($data['vertical'], $file);
             }
 
             $result = (count($data['horizontal']) > 0 || count($data['vertical']) > 0) ? getResponse('ok', '', $data) : getResponse('error', 'No hay contenido para mostrar');
         } else
             $result = getResponse('error', 'No hay contenido para mostrar');
 
+
+        $status_request = $result['status'] == 'ok' ? 200 : 400;
+        return $this->output->set_status_header($status_request)->set_output(json_encode($result));
+    }
+
+    /**
+     * Get base64 image
+     * 
+     * @return JSON 
+     */
+    public function getImage()
+    {
+        $imagePath = $this->input->post('imagePath');
+
+        if (isset($imagePath)) {
+            $path = FCPATH  . 'assets/images/' . $imagePath;
+
+            if (file_exists($path)) {
+                $imageBase64 = getDataURI($path);
+                $result = getResponse('ok', '', $imageBase64);
+
+            } else
+                $result = getResponse('error', 'Imagen no econtrada');
+                
+        } else
+            $result = getResponse('error', 'Datos invalidos');
 
         $status_request = $result['status'] == 'ok' ? 200 : 400;
         return $this->output->set_status_header($status_request)->set_output(json_encode($result));
