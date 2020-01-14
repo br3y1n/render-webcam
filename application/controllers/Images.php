@@ -21,23 +21,37 @@ class Images extends CI_Controller
      */
     public function getImages()
     {
-        $files = array_diff(scandir(FCPATH  . 'assets/images'), array('.', '..'));
+        $filesH = array_diff(scandir(FCPATH  . 'assets/images/horizontal'), array('.', '..'));
+        $filesV = array_diff(scandir(FCPATH  . 'assets/images/vertical'), array('.', '..'));
+        $data =
+            [
+                'horizontal' => [],
+                'vertical' => []
+            ];
 
-        if (count($files) > 0) {
-            $data = [];
+        if (count($filesH) > 0 || count($filesV) > 0) {
 
-            foreach ($files as $file) {
-                $path = FCPATH  . 'assets/images/' . $file;
+            foreach ($filesH as $file) {
+                $path = FCPATH  . 'assets/images/horizontal/' . $file;
                 $fileType = pathinfo($path, PATHINFO_EXTENSION);
 
                 if ($fileType == 'png') {
                     $imageBase64 = getDataURI($path);
-                    array_push($data, $imageBase64);
+                    array_push($data['horizontal'], $imageBase64);
                 }
             }
 
-            $result = (count($data) > 0) ? getResponse('ok', '', $data) : getResponse('error', 'No hay contenido para mostrar');
-            
+            foreach ($filesV as $file) {
+                $path = FCPATH  . 'assets/images/vertical/' . $file;
+                $fileType = pathinfo($path, PATHINFO_EXTENSION);
+
+                if ($fileType == 'png') {
+                    $imageBase64 = getDataURI($path);
+                    array_push($data['vertical'], $imageBase64);
+                }
+            }
+
+            $result = (count($data['horizontal']) > 0 || count($data['vertical']) > 0) ? getResponse('ok', '', $data) : getResponse('error', 'No hay contenido para mostrar');
         } else
             $result = getResponse('error', 'No hay contenido para mostrar');
 
