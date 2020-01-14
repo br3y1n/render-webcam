@@ -306,45 +306,46 @@
       function getImagesServer() {
 
         const
-
-          createImg = (type, resp) => {
-
-            let
-              carousel = (type == 'horizontal') ? $('#horizontalCarousel .carousel-inner') : $('#verticalCarousel .carousel-inner'),
-              hasChild = carousel[0].childElementCount > 0,
-              img = `<div class="carousel-item ${!hasChild ? 'active' : ''}">
-                          <img class="d-block w-100" src="${resp.data}">
-                        </div>`
-
-            carousel.append(img)
-          },
-
           getImages = (resp) => {
 
-            const getImage = (data, type) => {
-              $.ajax({
-                type: 'POST',
-                url: 'http://localhost/Brayan_Arango/Pruebas/render-webcam/Images/getImage',
-                data: data,
-                dataType: 'JSON',
-                success: createImg.bind(undefined, type)
+            const
+
+              createImg = (type, resp) => {
+
+                let
+                  carousel = (type == 'horizontal') ? $('#horizontalCarousel .carousel-inner') : $('#verticalCarousel .carousel-inner'),
+                  hasChild = carousel[0].childElementCount > 0,
+                  img = `<div class="carousel-item ${!hasChild ? 'active' : ''}">
+                            <img class="d-block w-100" src="${resp.data}">
+                          </div>`
+
+                carousel.append(img)
+              },
+
+              getImage = (data, type) => {
+                $.ajax({
+                  type: 'POST',
+                  url: 'http://localhost/Brayan_Arango/Pruebas/render-webcam/Images/getImage',
+                  data: data,
+                  dataType: 'JSON',
+                  success: createImg.bind(undefined, type)
+                })
+              }
+
+            Object.entries(resp.data).forEach(function (val) {
+              let
+                type = val[0],
+                images = val[1]
+
+              images.forEach(function (imgName) {
+                let imagePath = { imagePath: `${type}/${imgName}` }
+                getImage(imagePath, type)
               })
-            }
-
-            resp.data.horizontal.forEach(function (val) {
-              getImage({ imagePath: `horizontal/${val}` }, 'horizontal')
             })
-
-            resp.data.vertical.forEach(function (val) {
-              getImage({ imagePath: `vertical/${val}` }, 'vertical')
-            })
-
           },
 
           imageNotFound = (resp) => {
-
             $('.poster').html(`<h2>${resp.responseJSON.messageError}</h2>`)
-
           }
 
         $.ajax({
