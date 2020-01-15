@@ -15,7 +15,7 @@ class Images extends CI_Controller
     }
 
     /**
-     * Get base64 image
+     * Get images list with their sizes and orientation plane
      * 
      * @return JSON 
      */

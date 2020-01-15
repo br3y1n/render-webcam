@@ -156,33 +156,117 @@
           video: true
         },
 
-        posterDimens = {//set poster dimensions to vertical and horizontal orientations
-
+        posterDimens = {
           vertical: {
-            width: 700,
-            height: 1000
+            width: null,
+            height: null
           },
-
           horizontal: {
-            width: 800,
-            height: 600
+            width: null,
+            height: null
           }
+        }
 
-        },
+      oldGetUserMedia = (constraints, successCallback, errorCallback) => {
 
-        oldGetUserMedia = (constraints, successCallback, errorCallback) => {
+        let getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia)
 
-          let getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia)
+        if (!getUserMedia)
+          return Promise.reject(new Error('getUserMedia is not implemented in this browser'))
 
-          if (!getUserMedia)
-            return Promise.reject(new Error('getUserMedia is not implemented in this browser'))
+        return new Promise((successCallback, errorCallback) => { getUserMedia(constraints, successCallback, errorCallback) })
+      },
 
-          return new Promise((successCallback, errorCallback) => { getUserMedia(constraints, successCallback, errorCallback) })
+        startStream = () => {
+          navigator.mediaDevices.getUserMedia(constraints)
+            .then(function (stream) {
+              let
+                video = document.getElementById('webCam'),
+                videoCv = document.getElementById('webCamCv'),
+                videoCtx = videoCv.getContext('2d')
+
+              video.srcObject = stream
+              video.onloadedmetadata = () => {
+                video.play()
+                $('#view1').show()
+              }
+
+              video.onplay = () => {
+
+                const
+
+                  setCvDimens = () => {
+                    let
+                      vidW = video.videoWidth,
+                      vidH = video.videoHeight
+
+                    videoCv.width = (vidW > vidH) ? posterDimens.horizontal.width : posterDimens.vertical.width
+                    videoCv.height = (vidW > vidH) ? posterDimens.horizontal.height : posterDimens.vertical.height
+                  },
+
+                  getPoster = () => {
+                    if (video.videoWidth >= video.videoHeight) {
+                      $('#horizontalPoster').show()
+                      $('#verticalPoster').hide()
+                    } else {
+                      $('#horizontalPoster').hide()
+                      $('#verticalPoster').show()
+                    }
+                  },
+
+                  getCanvasDimens = () => {
+                    let
+                      vidW = video.videoWidth,
+                      vidH = video.videoHeight,
+                      postH = posterDimens.horizontal,
+                      postV = posterDimens.vertical,
+                      relCv = (vidW > vidH) ? (postH.width / postH.height) : (postV.width / postV.height),
+                      adaptH = vidW / relCv,
+                      adaptW = vidH * relCv,
+                      dimens = null
+
+                    if (adaptH <= vidH) {
+                      dimens = {
+                        x: 0,
+                        y: parseInt((vidH - adaptH) / 2),
+                        w: vidW,
+                        h: adaptH
+                      }
+                    } else {
+                      dimens = {
+                        x: parseInt((vidW - adaptW) / 2),
+                        y: 0,
+                        w: adaptW,
+                        h: vidH
+                      }
+                    }
+
+                    return dimens
+                  },
+
+                  videoLoop = () => {
+                    let dimensions = getCanvasDimens()
+                    setCvDimens()
+                    getPoster()
+                    videoCtx.scale(-1, 1) //mirror efect
+                    videoCtx.drawImage(video, dimensions.x, dimensions.y, dimensions.w, dimensions.h, -videoCv.width, 0, videoCv.width, videoCv.height)
+                    setTimeout(videoLoop, 0)
+                  }
+
+                videoLoop()
+              }
+            })
+            .catch(function (error) {
+              console.log(error.name + ": " + error.message)
+              $('body').html(error.name + ": " + error.message)
+            })
         }
 
       //start
-
-      getImagesServer()
+      let
+        posterInH = false,
+        posterInV = false,
+        seeView = false
 
       if (navigator.mediaDevices === undefined)
         navigator.mediaDevices = {}
@@ -190,91 +274,11 @@
       if (navigator.mediaDevices.getUserMedia === undefined)
         navigator.mediaDevices.getUserMedia = oldGetUserMedia
 
-      navigator.mediaDevices.getUserMedia(constraints)
-        .then(function (stream) {
-          let
-            video = document.getElementById('webCam'),
-            videoCv = document.getElementById('webCamCv'),
-            videoCtx = videoCv.getContext('2d')
-
-          video.srcObject = stream
-          video.onloadedmetadata = () => {
-            video.play()
-            $('#view1').show()
-          }
-
-          video.onplay = () => {
-
-            const
-
-              setCvDimens = () => {
-                let
-                  vidW = video.videoWidth,
-                  vidH = video.videoHeight
-
-                videoCv.width = (vidW > vidH) ? posterDimens.horizontal.width : posterDimens.vertical.width
-                videoCv.height = (vidW > vidH) ? posterDimens.horizontal.height : posterDimens.vertical.height
-              },
-
-              getPoster = () => {
-                if (video.videoWidth >= video.videoHeight) {
-                  $('#horizontalPoster').show()
-                  $('#verticalPoster').hide()
-                } else {
-                  $('#horizontalPoster').hide()
-                  $('#verticalPoster').show()
-                }
-              },
-
-              getCanvasDimens = () => {
-                let
-                  vidW = video.videoWidth,
-                  vidH = video.videoHeight,
-                  postH = posterDimens.horizontal,
-                  postV = posterDimens.vertical,
-                  relCv = (vidW > vidH) ? (postH.width / postH.height) : (postV.width / postV.height),
-                  adaptH = vidW / relCv,
-                  adaptW = vidH * relCv,
-                  dimens = null
-
-                if (adaptH <= vidH) {
-                  dimens = {
-                    x: 0,
-                    y: parseInt((vidH - adaptH) / 2),
-                    w: vidW,
-                    h: adaptH
-                  }
-                } else {
-                  dimens = {
-                    x: parseInt((vidW - adaptW) / 2),
-                    y: 0,
-                    w: adaptW,
-                    h: vidH
-                  }
-                }
-
-                return dimens
-              },
-
-              videoLoop = () => {
-                let dimensions = getCanvasDimens()
-                setCvDimens()
-                getPoster()
-                videoCtx.scale(-1, 1) //mirror efect
-                videoCtx.drawImage(video, dimensions.x, dimensions.y, dimensions.w, dimensions.h, -videoCv.width, 0, videoCv.width, videoCv.height)
-                setTimeout(videoLoop, 0)
-              }
-
-            videoLoop()
-          }
-        })
-        .catch(function (error) {
-          console.log(error.name + ": " + error.message)
-          $('body').html(error.name + ": " + error.message)
-        })
+      getImagesServer()
+      //-------------------------------------------------------
 
 
-      $('#capture').click(function () {
+      $('#capture, .carousel-inner').click(function () {
         let
           img = $('#horizontalCarousel .carousel-inner .active img')[0],
           canvas = document.getElementById('webCamCv'),
@@ -321,6 +325,14 @@
                           </div>`
 
                 carousel.append(img)
+
+                posterInH = (type == 'horizontal' && !posterInH) ? true : posterInH
+                posterInV = (type == 'vertical' && !posterInV) ? true : posterInV
+
+                if (posterInV && posterInH && !seeView) {
+                  seeView = true
+                  startStream()
+                }
               },
 
               getImage = (data, type) => {
@@ -333,14 +345,31 @@
                 })
               }
 
-            Object.entries(resp.data).forEach(function (val) {
+            Object.entries(resp.data.images).forEach(function (val) {
               let
-                type = val[0],
+                orientationPlane = val[0],
                 images = val[1]
 
-              images.forEach(function (imgName) {
-                let imagePath = { imagePath: `${type}/${imgName}` }
-                getImage(imagePath, type)
+              Object.entries(images).forEach(function (val) {
+                let
+                  features = val[0],
+                  valueFea = val[1]
+
+                if (features == 'sizes') {
+                  Object.entries(valueFea).forEach(function (val) {
+                    let
+                      sizeName = val[0],
+                      size = val[1]
+
+                    posterDimens[orientationPlane][sizeName] = size
+                  })
+
+                } else {
+                  valueFea.forEach(function (imgName) {
+                    let imagePath = { imagePath: `${orientationPlane}/${imgName}` }
+                    getImage(imagePath, orientationPlane)
+                  })
+                }
               })
             })
           },
