@@ -7,7 +7,7 @@ class Images extends CI_Controller
     public function __construct()
     {
         parent::__construct();
-        $this->load->helper('tools_helper');
+        $this->load->helper(['tools_helper', 'directory']);
         header('Access-Control-Allow-Origin: *');
         header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
         header("Access-Control-Allow-Methods: GET,POST");
@@ -21,36 +21,49 @@ class Images extends CI_Controller
      */
     public function getImagesList()
     {
-        $filesH = array_diff(scandir(FCPATH  . 'assets/images/horizontal'), array('.', '..'));
-        $filesV = array_diff(scandir(FCPATH  . 'assets/images/vertical'), array('.', '..'));
-        $data =
-            [
+        $allowedDirectories = ['vertical\\', 'horizontal\\'];
+        $directoryImages = FCPATH  . 'assets/images/';
+        $allowedExt = 'png';
+        $directories = array_intersect_key(directory_map($directoryImages), array_flip($allowedDirectories));
+        $data = [
+            'images' => [
                 'horizontal' => [],
                 'vertical' => []
-            ];
+            ]
+        ];
 
-        if (count($filesH) > 0 || count($filesV) > 0) {
+        foreach ($directories as $directoryName => $directory) {
+            $norDirName = str_replace('\\', '', $directoryName);
+            foreach ($directory as $file) {
+                if (is_string($file)) {
+                    $path = $directoryImages . $directoryName . $file;
+                    if (pathinfo($path, PATHINFO_EXTENSION) == $allowedExt) {;
+                        $imageSize = getimagesize($path);
+                        $width = $imageSize[0];
+                        $height = $imageSize[1];
 
-            foreach ($filesH as $file) {
-                $path = FCPATH  . 'assets/images/horizontal/' . $file;
-                $fileType = pathinfo($path, PATHINFO_EXTENSION);
+                        if (isset($data['images'][$norDirName]['sizes'])) {
+                            $sizes = $data['images'][$norDirName]['sizes'];
+                            if (is_array($sizes) && ($sizes['width'] != $width || $sizes['height'] != $height))
 
-                if ($fileType == 'png')
-                    array_push($data['horizontal'], $file);
+                                $data['images'][$norDirName]['sizes'] = 'noStandardized';
+                        } else
+                            $data['images'][$norDirName]['sizes'] = [
+                                'width' => $width,
+                                'height' => $height
+                            ];
+
+                        if (isset($data['images'][$norDirName]['list']))
+                            array_push($data['images'][$norDirName]['list'], $file);
+
+                        else
+                            $data['images'][$norDirName]['list'] = [$file];
+                    }
+                }
             }
+        }
 
-            foreach ($filesV as $file) {
-                $path = FCPATH  . 'assets/images/vertical/' . $file;
-                $fileType = pathinfo($path, PATHINFO_EXTENSION);
-
-                if ($fileType == 'png')
-                    array_push($data['vertical'], $file);
-            }
-
-            $result = (count($data['horizontal']) > 0 || count($data['vertical']) > 0) ? getResponse('ok', '', $data) : getResponse('error', 'No hay contenido para mostrar');
-        } else
-            $result = getResponse('error', 'No hay contenido para mostrar');
-
+        $result = (count($data['images']['horizontal']) > 0 || count($data['images']['vertical']) > 0) ? getResponse('ok', '', $data) : getResponse('error', 'No hay imagenes para mostrar');
 
         $status_request = $result['status'] == 'ok' ? 200 : 400;
         return $this->output->set_status_header($status_request)->set_output(json_encode($result));
@@ -71,10 +84,8 @@ class Images extends CI_Controller
             if (file_exists($path)) {
                 $imageBase64 = getDataURI($path);
                 $result = getResponse('ok', '', $imageBase64);
-
             } else
                 $result = getResponse('error', 'Imagen no econtrada');
-                
         } else
             $result = getResponse('error', 'Datos invalidos');
 
