@@ -280,15 +280,17 @@
 
       $('#capture, .carousel-inner').click(function () {
         let
-          img = $('#horizontalCarousel .carousel-inner .active img')[0],
           canvas = document.getElementById('webCamCv'),
+          cvWidth = canvas.width,
+          cvHeight = canvas.height,
+          img = $(`${cvWidth >= cvHeight ? '#horizontalCarousel' : '#verticalCarousel'} .carousel-inner .active img`)[0],
           newCanvas = document.createElement("CANVAS"),
-          ctxCanvas = newCanvas.getContext('2d')
+          ctxNewCanvas = newCanvas.getContext('2d')
 
-        newCanvas.width = canvas.width
-        newCanvas.height = canvas.height
-        ctxCanvas.drawImage(canvas, 0, 0)
-        ctxCanvas.drawImage(img, 0, 0)
+        newCanvas.width = cvWidth
+        newCanvas.height = cvHeight
+        ctxNewCanvas.drawImage(canvas, 0, 0)
+        ctxNewCanvas.drawImage(img, 0, 0)
 
         let imgBase64 = newCanvas.toDataURL()
 
