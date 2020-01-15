@@ -260,7 +260,8 @@
                 let dimensions = getCanvasDimens()
                 setCvDimens()
                 getPoster()
-                videoCtx.drawImage(video, dimensions.x, dimensions.y, dimensions.w, dimensions.h, 0, 0, videoCv.width, videoCv.height)
+                videoCtx.scale(-1, 1) //mirror efect
+                videoCtx.drawImage(video, dimensions.x, dimensions.y, dimensions.w, dimensions.h, -videoCv.width, 0, videoCv.width, videoCv.height)
                 setTimeout(videoLoop, 0)
               }
 
