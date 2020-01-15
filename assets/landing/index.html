@@ -263,11 +263,6 @@
         }
 
       //start
-      let
-        posterInH = false,
-        posterInV = false,
-        seeView = false
-
       if (navigator.mediaDevices === undefined)
         navigator.mediaDevices = {}
 
@@ -275,6 +270,7 @@
         navigator.mediaDevices.getUserMedia = oldGetUserMedia
 
       getImagesServer()
+      startStream()
       //-------------------------------------------------------
 
 
@@ -327,14 +323,6 @@
                           </div>`
 
                 carousel.append(img)
-
-                posterInH = (type == 'horizontal' && !posterInH) ? true : posterInH
-                posterInV = (type == 'vertical' && !posterInV) ? true : posterInV
-
-                if (posterInV && posterInH && !seeView) {
-                  seeView = true
-                  startStream()
-                }
               },
 
               getImage = (data, type) => {
